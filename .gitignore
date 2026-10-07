@@ -1,0 +1,11 @@
+# Archivos locales de Terraform
+**/.terraform/*
+
+# Archivos de estado (Peligroso subirlos)
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Configuraciones de tu editor IntelliJ
+.idea/

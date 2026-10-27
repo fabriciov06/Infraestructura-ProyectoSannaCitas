@@ -15,3 +15,9 @@ variable "nombre_cola_sqs" {
   type        = string
   default     = "sannacitas-notificaciones-queue"
 }
+
+variable "email_notificaciones" {
+  description = "Correo electrónico institucional o de prueba para Amazon SES"
+  type        = string
+  default     = "soporte.sannacitas@gmail.com"
+}

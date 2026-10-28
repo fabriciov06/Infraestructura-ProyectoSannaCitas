@@ -23,6 +23,8 @@ jobs:
   terraform:
     name: Ejecutar Terraform
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: true
 
     steps:
       - name: Checkout del repositorio

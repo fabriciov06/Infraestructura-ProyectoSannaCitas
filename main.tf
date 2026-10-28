@@ -1,4 +1,19 @@
-# Configuración del proveedor de AWS
+terraform {
+  required_version = ">= 1.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  # Configuración del backend en S3 exigida por el laboratorio
+  backend "s3" {
+    key = "lab09/dev/terraform.tfstate"
+  }
+}
+
 provider "aws" {
   region = var.aws_region
 }
@@ -6,7 +21,6 @@ provider "aws" {
 
 # 1. RED Y SEGURIDAD (Amazon VPC y ALB)
 
-# VPC principal para la clínica
 resource "aws_vpc" "clinica_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -17,7 +31,6 @@ resource "aws_vpc" "clinica_vpc" {
   }
 }
 
-# Subredes públicas para el Balanceador (ALB)
 resource "aws_subnet" "public_subnet_1" {
   vpc_id                  = aws_vpc.clinica_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -40,7 +53,6 @@ resource "aws_subnet" "public_subnet_2" {
   }
 }
 
-# Internet Gateway para dar salida a internet
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.clinica_vpc.id
 
@@ -72,7 +84,6 @@ resource "aws_route_table_association" "rta_2" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-# Security Group para el ALB
 resource "aws_security_group" "alb_sg" {
   name        = "${var.entorno}-alb-sg"
   description = "Permitir trafico HTTP/HTTPS web"
@@ -100,7 +111,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# Application Load Balancer (ALB) - Con su Listener
 resource "aws_lb" "sannacitas_alb" {
   name               = "sannacitas-alb"
   internal           = false
@@ -113,7 +123,6 @@ resource "aws_lb" "sannacitas_alb" {
   }
 }
 
-# Listener HTTP en puerto 80 (redirección de prueba)
 resource "aws_lb_listener" "http_listener" {
   load_balancer_arn = aws_lb.sannacitas_alb.arn
   port              = 80
@@ -147,7 +156,7 @@ resource "aws_ecs_task_definition" "api_task" {
   container_definitions = jsonencode([
     {
       name      = "api-b"
-      image     = "public.ecr.aws/docker/library/nginx:alpine" # Imagen ligera de prueba para el MVP
+      image     = "public.ecr.aws/docker/library/nginx:alpine"
       essential = true
       portMappings = [
         {
@@ -162,7 +171,6 @@ resource "aws_ecs_task_definition" "api_task" {
 
 # 3. PROCESAMIENTO ASÍNCRONO (Notificaciones)
 
-# Cola SQS
 resource "aws_sqs_queue" "cola_notificaciones_citas" {
   name                      = "${var.entorno}-${var.nombre_cola_sqs}"
   delay_seconds             = 0
@@ -171,17 +179,14 @@ resource "aws_sqs_queue" "cola_notificaciones_citas" {
   receive_wait_time_seconds = 10
 }
 
-# Tema SNS (SMS / Alertas)
 resource "aws_sns_topic" "notificaciones_pacientes" {
   name = "${var.entorno}-sannacitas-alertas-topic"
 }
 
-# Identidad SES (Correos)
 resource "aws_ses_email_identity" "verificacion_correo" {
   email = var.email_notificaciones
 }
 
-# Rol IAM para Lambda
 resource "aws_iam_role" "lambda_procesador_role" {
   name = "${var.entorno}-lambda-procesador-role"
 

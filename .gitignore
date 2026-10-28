@@ -1,11 +1,18 @@
 # Archivos locales de Terraform
 **/.terraform/*
+*.terraform.lock.hcl
 
-# Archivos de estado (Peligroso subirlos)
+# Archivos de estado y planes (¡Peligroso subirlos!)
 *.tfstate
 *.tfstate.*
+*.tfplan
 crash.log
 crash.*.log
 
+# Configuración del backend local (si se crea de forma local)
+backend.hcl
+
 # Configuraciones de tu editor IntelliJ
 .idea/
+*.iml
+.vscode/

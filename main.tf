@@ -3,9 +3,8 @@ provider "aws" {
   region = var.aws_region
 }
 
-# ==========================================
+
 # 1. RED Y SEGURIDAD (Amazon VPC y ALB)
-# ==========================================
 
 # VPC principal para la clínica
 resource "aws_vpc" "clinica_vpc" {
@@ -101,7 +100,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# Application Load Balancer (ALB) - Con su Listener (¡lo que preguntó el profesor!)
+# Application Load Balancer (ALB) - Con su Listener
 resource "aws_lb" "sannacitas_alb" {
   name               = "sannacitas-alb"
   internal           = false
@@ -114,7 +113,7 @@ resource "aws_lb" "sannacitas_alb" {
   }
 }
 
-# Listener HTTP en puerto 80 (para el MVP y redirección de prueba)
+# Listener HTTP en puerto 80 (redirección de prueba)
 resource "aws_lb_listener" "http_listener" {
   load_balancer_arn = aws_lb.sannacitas_alb.arn
   port              = 80
@@ -132,9 +131,7 @@ resource "aws_lb_listener" "http_listener" {
 }
 
 
-# ==========================================
 # 2. CÓMPUTO (Amazon ECS - Backend API B)
-# ==========================================
 
 resource "aws_ecs_cluster" "sannacitas_cluster" {
   name = "${var.entorno}-sannacitas-cluster"
@@ -163,9 +160,7 @@ resource "aws_ecs_task_definition" "api_task" {
 }
 
 
-# ==========================================
 # 3. PROCESAMIENTO ASÍNCRONO (Notificaciones)
-# ==========================================
 
 # Cola SQS
 resource "aws_sqs_queue" "cola_notificaciones_citas" {

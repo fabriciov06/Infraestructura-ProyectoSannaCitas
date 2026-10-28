@@ -1,0 +1,23 @@
+name: Validacion Terraform MVP
+
+on: [push]
+
+jobs:
+  validar-infraestructura:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del proyecto
+        uses: actions/checkout@v4
+
+      - name: Listar archivos
+        run: |
+          ls ${{ github.workspace }}
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate

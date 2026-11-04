@@ -1,9 +1,11 @@
+
 name: Deploy y Destroy Terraform MVP
 
 on:
   push:
     branches:
-      - main
+      - development
+
   workflow_dispatch:
     inputs:
       action:
@@ -23,8 +25,7 @@ jobs:
   terraform:
     name: Ejecutar Terraform
     runs-on: ubuntu-latest
-    env:
-      ACTIONS_STEP_DEBUG: true
+    environment: dev
 
     steps:
       - name: Checkout del repositorio

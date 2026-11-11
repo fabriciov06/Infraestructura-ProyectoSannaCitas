@@ -90,7 +90,7 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = aws_vpc.clinica_vpc.id
 
   ingress {
-      description = "Permitir trafico HTTP"
+    description = "Permitir trafico HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -98,7 +98,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   ingress {
-      description = "Permitir trafico HTTPS"
+    description = "Permitir trafico HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -106,7 +106,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   egress {
-      description = "Permitir trafico de salida"
+    description = "Permitir trafico de salida"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -188,8 +188,8 @@ resource "aws_ecs_task_definition" "api_task" {
       ]
       mountPoints = [
         { sourceVolume = "nginx-cache", containerPath = "/var/cache/nginx", readOnly = false },
-        { sourceVolume = "nginx-run",   containerPath = "/var/run",         readOnly = false },
-        { sourceVolume = "nginx-tmp",   containerPath = "/tmp",             readOnly = false }
+        { sourceVolume = "nginx-run", containerPath = "/var/run", readOnly = false },
+        { sourceVolume = "nginx-tmp", containerPath = "/tmp", readOnly = false }
       ]
     }
   ])
@@ -289,6 +289,12 @@ resource "aws_lambda_function" "procesador_notificaciones" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   source_code_hash = data.archive_file.lambda_dummy.output_base64sha256
+
+  tracing_config {
+    mode = "Active"
+  }
+
+  reserved_concurrent_executions = 5
 }
 
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {

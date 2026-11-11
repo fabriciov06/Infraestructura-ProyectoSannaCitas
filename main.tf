@@ -146,6 +146,11 @@ resource "aws_lb_listener" "http_listener" {
 
 resource "aws_ecs_cluster" "sannacitas_cluster" {
   name = "${var.entorno}-sannacitas-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "api_task" {

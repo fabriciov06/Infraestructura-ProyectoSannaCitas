@@ -34,7 +34,7 @@ resource "aws_vpc" "clinica_vpc" {
 resource "aws_subnet" "public_subnet_1" {
   vpc_id                  = aws_vpc.clinica_vpc.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = "${var.aws_region}a"
 
   tags = {
@@ -45,7 +45,7 @@ resource "aws_subnet" "public_subnet_1" {
 resource "aws_subnet" "public_subnet_2" {
   vpc_id                  = aws_vpc.clinica_vpc.id
   cidr_block              = "10.0.2.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = "${var.aws_region}b"
 
   tags = {
@@ -90,6 +90,7 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = aws_vpc.clinica_vpc.id
 
   ingress {
+    description = "Permitir trafico HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -97,6 +98,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   ingress {
+    description = "Permitir trafico HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -104,6 +106,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   egress {
+    description = "Permitir trafico de salida"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -117,6 +120,9 @@ resource "aws_lb" "sannacitas_alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+
+  enable_deletion_protection = true
+  drop_invalid_header_fields = true
 
   tags = {
     Name = "sannacitas-app-load-balancer"
@@ -144,6 +150,11 @@ resource "aws_lb_listener" "http_listener" {
 
 resource "aws_ecs_cluster" "sannacitas_cluster" {
   name = "${var.entorno}-sannacitas-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "api_task" {
@@ -153,16 +164,32 @@ resource "aws_ecs_task_definition" "api_task" {
   cpu                      = "256"
   memory                   = "512"
 
+  volume {
+    name = "nginx-cache"
+  }
+  volume {
+    name = "nginx-run"
+  }
+  volume {
+    name = "nginx-tmp"
+  }
+
   container_definitions = jsonencode([
     {
-      name      = "api-b"
-      image     = "public.ecr.aws/docker/library/nginx:alpine"
-      essential = true
+      name                   = "api-b"
+      image                  = "public.ecr.aws/docker/library/nginx:alpine"
+      essential              = true
+      readonlyRootFilesystem = true
       portMappings = [
         {
           containerPort = 80
           hostPort      = 80
         }
+      ]
+      mountPoints = [
+        { sourceVolume = "nginx-cache", containerPath = "/var/cache/nginx", readOnly = false },
+        { sourceVolume = "nginx-run", containerPath = "/var/run", readOnly = false },
+        { sourceVolume = "nginx-tmp", containerPath = "/tmp", readOnly = false }
       ]
     }
   ])
@@ -177,10 +204,14 @@ resource "aws_sqs_queue" "cola_notificaciones_citas" {
   max_message_size          = 262144
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
+
+  sqs_managed_sse_enabled = true
 }
 
 resource "aws_sns_topic" "notificaciones_pacientes" {
   name = "${var.entorno}-sannacitas-alertas-topic"
+
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_ses_email_identity" "verificacion_correo" {
@@ -258,6 +289,12 @@ resource "aws_lambda_function" "procesador_notificaciones" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   source_code_hash = data.archive_file.lambda_dummy.output_base64sha256
+
+  tracing_config {
+    mode = "Active"
+  }
+
+  reserved_concurrent_executions = 5
 }
 
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {

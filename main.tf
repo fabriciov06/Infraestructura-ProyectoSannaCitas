@@ -204,10 +204,14 @@ resource "aws_sqs_queue" "cola_notificaciones_citas" {
   max_message_size          = 262144
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
+
+  sqs_managed_sse_enabled = true
 }
 
 resource "aws_sns_topic" "notificaciones_pacientes" {
   name = "${var.entorno}-sannacitas-alertas-topic"
+
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_ses_email_identity" "verificacion_correo" {

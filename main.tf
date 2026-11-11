@@ -160,16 +160,32 @@ resource "aws_ecs_task_definition" "api_task" {
   cpu                      = "256"
   memory                   = "512"
 
+  volume {
+    name = "nginx-cache"
+  }
+  volume {
+    name = "nginx-run"
+  }
+  volume {
+    name = "nginx-tmp"
+  }
+
   container_definitions = jsonencode([
     {
-      name      = "api-b"
-      image     = "public.ecr.aws/docker/library/nginx:alpine"
-      essential = true
+      name                   = "api-b"
+      image                  = "public.ecr.aws/docker/library/nginx:alpine"
+      essential              = true
+      readonlyRootFilesystem = true
       portMappings = [
         {
           containerPort = 80
           hostPort      = 80
         }
+      ]
+      mountPoints = [
+        { sourceVolume = "nginx-cache", containerPath = "/var/cache/nginx", readOnly = false },
+        { sourceVolume = "nginx-run",   containerPath = "/var/run",         readOnly = false },
+        { sourceVolume = "nginx-tmp",   containerPath = "/tmp",             readOnly = false }
       ]
     }
   ])

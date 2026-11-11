@@ -90,6 +90,7 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = aws_vpc.clinica_vpc.id
 
   ingress {
+      description = "Permitir trafico HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -97,6 +98,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   ingress {
+      description = "Permitir trafico HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -104,6 +106,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   egress {
+      description = "Permitir trafico de salida"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

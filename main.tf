@@ -118,6 +118,8 @@ resource "aws_lb" "sannacitas_alb" {
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
 
+  enable_deletion_protection = true
+
   tags = {
     Name = "sannacitas-app-load-balancer"
   }
